@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class HeartbeatService {
-    private static final String TOPIC = "heartbeat-topic";
+    private static final String TOPIC = "heartbeat-raw-topic";
 
     private final KafkaTemplate<String, Heartbeat> kafkaTemplate;
 
@@ -19,7 +19,7 @@ public class HeartbeatService {
     }
 
     public void sendHeartbeat(Heartbeat heartbeat) {
-        log.debug("HEARTBEAT\t"+heartbeat.getPlayerId()+" "+heartbeat.getHeartbeat());
+        log.debug("HEARTBEAT["+heartbeat.getCreatedAt()+"]\t"+heartbeat.getPlayerId()+" "+heartbeat.getHeartbeat());
         kafkaTemplate.send(TOPIC, heartbeat);
     }
 }
