@@ -1,5 +1,6 @@
-package com.gunpang.heartservice.dto;
+package com.gunpang.heartserviceconsume.dto;
 
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,11 +11,13 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 public class Heartbeat {
-    private Long playerId;
+    private String playerId;
     private Double heartbeat;
+    private LocalDateTime createdAt;
 
-    public Heartbeat(Long playerId, Double heartbeat) {
+    public Heartbeat(String playerId, Double heartbeat,LocalDateTime createdAt) {
         this.playerId = playerId;
         this.heartbeat = heartbeat;
+        this.createdAt = createdAt;
     }
 }
