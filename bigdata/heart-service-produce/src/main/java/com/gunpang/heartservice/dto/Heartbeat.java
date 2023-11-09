@@ -11,11 +11,11 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 public class Heartbeat {
-    private Long playerId;
+    private String playerId; //key
     private Double heartbeat;
     private LocalDateTime createdAt;
 
-    public Heartbeat(Long playerId, Double heartbeat,LocalDateTime createdAt) {
+    public Heartbeat(String playerId, Double heartbeat,LocalDateTime createdAt) {
         this.playerId = playerId;
         this.heartbeat = heartbeat;
         this.createdAt = createdAt;

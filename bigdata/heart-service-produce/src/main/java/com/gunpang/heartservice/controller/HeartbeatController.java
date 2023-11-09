@@ -27,6 +27,4 @@ public class HeartbeatController {
         heartbeatService.sendHeartbeat(message);
         return message;
     }
-
-
 }
