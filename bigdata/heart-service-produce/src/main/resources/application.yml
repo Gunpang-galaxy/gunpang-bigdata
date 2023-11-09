@@ -1,8 +1,9 @@
-spring:
-  kafka:
-    producer:
-      bootstrap-servers: ${bootstrap-server}
+server:
+  servlet:
+    context-path: /live/bigdata
+  port:
+    8180
 
-logging:
-  level:
-    com.gunpang.heartservice: DEBUG
+spring:
+  profiles:
+    default: prod
