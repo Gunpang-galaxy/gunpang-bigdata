@@ -1,0 +1,9 @@
+server:
+  servlet:
+    context-path: /live/bigdata
+  port:
+    8180
+
+spring:
+  profiles:
+    default: prod

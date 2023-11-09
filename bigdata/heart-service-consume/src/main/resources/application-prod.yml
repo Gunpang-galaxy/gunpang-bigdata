@@ -1,0 +1,8 @@
+spring:
+  kafka:
+    producer:
+      bootstrap-servers: ${bootstrap-prod-server}
+
+logging:
+  level:
+    com.gunpang.heartservice: INFO

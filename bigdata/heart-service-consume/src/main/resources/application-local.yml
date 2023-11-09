@@ -1,0 +1,8 @@
+spring:
+  kafka:
+    producer:
+      bootstrap-servers: ${bootstrap-local-server}
+
+logging:
+  level:
+    com.gunpang.heartservice: DEBUG
