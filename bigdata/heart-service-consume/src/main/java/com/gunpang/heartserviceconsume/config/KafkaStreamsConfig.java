@@ -16,9 +16,11 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.springframework.context.annotation.Bean;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerde;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.stereotype.Component;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
-import io.confluent.kafka.streams.serdes.json.KafkaJsonSerde;
 
 @EnableKafkaStreams
 @Component
@@ -44,9 +46,11 @@ public class KafkaStreamsConfig {
                     double averageHeartRate = accumulator.calculateAverage(); // 평균 심박수
                     return new KeyValue<>(key.key(), new ProcessedHeartbeat(key.key(), averageHeartRate,accumulator.firstHeartbeatAt));
                 });
+        Serde<ProcessedHeartbeat> processedHeartbeatSerde = Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProcessedHeartbeat.class));
+
         KStream<String, ProcessedHeartbeat> keyedStream = averagedHeartRateStream
                 .selectKey((key, value) -> value.getPlayerId());
-        Serde<ProcessedHeartbeat> processedHeartbeatSerde = new KafkaJsonSerde<>(ProcessedHeartbeat.class);
+
         keyedStream.to("heartbeat-processed-topic", Produced.with(Serdes.String(), processedHeartbeatSerde));
         return averagedHeartRateStream;
     }
