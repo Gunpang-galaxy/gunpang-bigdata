@@ -1,7 +1,10 @@
 spring:
+  application:
+    name: heartbeat-consume
   kafka:
-    producer:
-      bootstrap-servers: ${bootstrap-local-server}
+    bootstrap-servers: ${bootstrap-local-server}
+    streams:
+      application-id: heartbeat-consume
 
 logging:
   level:
