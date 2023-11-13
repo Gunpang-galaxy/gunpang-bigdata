@@ -1,4 +1,4 @@
-package com.gunpang.heartserviceconsume.dto;
+package com.gunpang.heartservice.dto;
 
 
 import lombok.Getter;

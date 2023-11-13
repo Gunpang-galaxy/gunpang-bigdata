@@ -1,12 +1,10 @@
-package com.gunpang.heartserviceconsume.config;
+package com.gunpang.heartservice.config;
 
-import com.gunpang.heartserviceconsume.dto.ProcessedHeartbeat;
-import com.gunpang.heartserviceconsume.dto.Heartbeat;
+import com.gunpang.heartservice.dto.HeartRateAccumulator;
+import com.gunpang.heartservice.dto.ProcessedHeartbeat;
+import com.gunpang.heartservice.dto.Heartbeat;
 import java.time.Duration;
-import java.time.LocalDateTime;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
@@ -20,7 +18,6 @@ import org.springframework.kafka.support.serializer.JsonSerde;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.stereotype.Component;
 import org.springframework.kafka.annotation.EnableKafkaStreams;
-
 @EnableKafkaStreams
 @Component
 public class KafkaStreamsConfig {
@@ -36,10 +33,11 @@ public class KafkaStreamsConfig {
             .aggregate(
                 HeartRateAccumulator::new, // Initializer
                 (key, heartbeat, accumulator) -> {
+                    //System.out.println("[RESULT] "+heartbeat);
                     accumulator.addHeartbeat(heartbeat);
+                    //System.out.println(accumulator.getFirstHeartbeatAt()+" "+accumulator.getSum());
                     return accumulator;
                 },
-//                        Materialized.as("heart-rate-sum-store")
                 Materialized.<String, HeartRateAccumulator, WindowStore<Bytes, byte[]>>as("heart-rate-sum-store")
                     .withKeySerde(Serdes.String())
                     .withValueSerde(new JsonSerde<>(HeartRateAccumulator.class))
@@ -47,7 +45,9 @@ public class KafkaStreamsConfig {
             .toStream()
             .map((key, accumulator) -> {
                 double averageHeartRate = accumulator.calculateAverage(); // 평균 심박수
-                return new KeyValue<>(key.key(), new ProcessedHeartbeat(key.key(), averageHeartRate,accumulator.firstHeartbeatAt));
+                System.out.println("[RESULT: avgHeartRate] "+averageHeartRate);
+
+                return new KeyValue<>(key.key(), new ProcessedHeartbeat(key.key(), averageHeartRate,accumulator.getFirstHeartbeatAt()));
             });
         Serde<ProcessedHeartbeat> processedHeartbeatSerde = Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProcessedHeartbeat.class));
 
@@ -55,27 +55,12 @@ public class KafkaStreamsConfig {
             .selectKey((key, value) -> value.getPlayerId());
 
         keyedStream.to("heartbeat-processed-topic", Produced.with(Serdes.String(), processedHeartbeatSerde));
+
+        System.out.println("여기!"+averagedHeartRateStream);
         return averagedHeartRateStream;
     }
 
-    @Getter
-    @AllArgsConstructor
-    private class HeartRateAccumulator {
-        static double sum = 0;
-        static long count = 0;
-        static LocalDateTime firstHeartbeatAt = null; // 윈도우 내 첫 번째 심박수 데이터의 생성 시간
 
-        double calculateAverage() { // 평균 심박수 계산
-            return count > 0 ? sum / count : 0;
-        }
-        void addHeartbeat(Heartbeat heartbeat) { // heartbeat 누적
-            if (firstHeartbeatAt == null || heartbeat.getCreatedAt().isBefore(firstHeartbeatAt)) {
-                firstHeartbeatAt = heartbeat.getCreatedAt();
-            }
-            sum += heartbeat.getHeartbeat();
-            count++;
-        }
-    }
 
 }
 
