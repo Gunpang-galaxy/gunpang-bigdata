@@ -20,6 +20,6 @@ public class HeartbeatService {
 
     public void sendHeartbeat(Heartbeat heartbeat) {
         log.debug("HEARTBEAT["+heartbeat.getCreatedAt()+"]\t"+heartbeat.getPlayerId()+" "+heartbeat.getHeartbeat());
-        kafkaTemplate.send(TOPIC, String.valueOf(heartbeat.getPlayerId()),heartbeat);
+        kafkaTemplate.send(TOPIC, heartbeat.getPlayerId(),heartbeat);
     }
 }
