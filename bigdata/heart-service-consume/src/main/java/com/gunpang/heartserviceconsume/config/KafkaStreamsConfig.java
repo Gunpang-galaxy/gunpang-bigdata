@@ -9,12 +9,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.TimeWindows;
+import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.state.WindowStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerde;
@@ -28,28 +27,32 @@ public class KafkaStreamsConfig {
     //심박수 3분 간격으로 시간 집계
     @Bean
     public KStream<String, ProcessedHeartbeat> kStream(StreamsBuilder streamsBuilder) {
-        KStream<String, Heartbeat> stream = streamsBuilder.stream("heartbeat-raw-topic");
+        KStream<String, Heartbeat> stream = streamsBuilder
+            .stream("heartbeat-raw-topic", Consumed.with(Serdes.String(), new JsonSerde<>(Heartbeat.class)));
 
         KStream<String, ProcessedHeartbeat> averagedHeartRateStream = stream
-                .groupByKey()
-                .windowedBy(TimeWindows.of(Duration.ofMinutes(3)))// 3분마다 Aggregate
-                .aggregate(
-                        HeartRateAccumulator::new, // Initializer
-                        (key, heartbeat, accumulator) -> {
-                            accumulator.addHeartbeat(heartbeat);
-                            return accumulator;
-                        },
-                        Materialized.as("heart-rate-sum-store")
-                )
-                .toStream()
-                .map((key, accumulator) -> {
-                    double averageHeartRate = accumulator.calculateAverage(); // 평균 심박수
-                    return new KeyValue<>(key.key(), new ProcessedHeartbeat(key.key(), averageHeartRate,accumulator.firstHeartbeatAt));
-                });
+            .groupByKey()
+            .windowedBy(TimeWindows.of(Duration.ofMinutes(3)))// 3분마다 Aggregate
+            .aggregate(
+                HeartRateAccumulator::new, // Initializer
+                (key, heartbeat, accumulator) -> {
+                    accumulator.addHeartbeat(heartbeat);
+                    return accumulator;
+                },
+//                        Materialized.as("heart-rate-sum-store")
+                Materialized.<String, HeartRateAccumulator, WindowStore<Bytes, byte[]>>as("heart-rate-sum-store")
+                    .withKeySerde(Serdes.String())
+                    .withValueSerde(new JsonSerde<>(HeartRateAccumulator.class))
+            )
+            .toStream()
+            .map((key, accumulator) -> {
+                double averageHeartRate = accumulator.calculateAverage(); // 평균 심박수
+                return new KeyValue<>(key.key(), new ProcessedHeartbeat(key.key(), averageHeartRate,accumulator.firstHeartbeatAt));
+            });
         Serde<ProcessedHeartbeat> processedHeartbeatSerde = Serdes.serdeFrom(new JsonSerializer<>(), new JsonDeserializer<>(ProcessedHeartbeat.class));
 
         KStream<String, ProcessedHeartbeat> keyedStream = averagedHeartRateStream
-                .selectKey((key, value) -> value.getPlayerId());
+            .selectKey((key, value) -> value.getPlayerId());
 
         keyedStream.to("heartbeat-processed-topic", Produced.with(Serdes.String(), processedHeartbeatSerde));
         return averagedHeartRateStream;
