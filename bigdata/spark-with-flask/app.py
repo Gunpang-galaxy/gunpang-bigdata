@@ -1,5 +1,7 @@
-from flask import Flask,jsonify, make_response
+from flask import Flask,jsonify, make_response, request
 from bigdata import getHiveData
+import pandas as pd
+
 app = Flask(__name__)
 
 @app.route('/',methods=['GET'], strict_slashes=False)
