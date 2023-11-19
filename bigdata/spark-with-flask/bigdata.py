@@ -22,7 +22,7 @@ def getHiveData(playerId, date, age, gender):
     df = spark.read.parquet(EXAMPLE_PATH)
     
     __printData("[1] ONLY GET ", df,trunc=False)
-    filtered_data = df.filter((df['playerId']==playerId)&(to_date(df['createdAt'])==lit(date)))
+    filtered_data = df.filter((df['playerId']==playerId)&(expr("to_date(createdAt - INTERVAL 9 HOURS)")==lit(date)))
     __printData("[2] Filtered data", filtered_data)
     # # 최대 심박수 : 220 - 나이
     # MAX_HEARTBEAT = 220 - age
