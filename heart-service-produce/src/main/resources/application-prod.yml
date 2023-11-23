@@ -1,7 +1,14 @@
+# application-prod.yml
 spring:
   kafka:
     producer:
-      bootstrap-servers: ${bootstrap-prod-server}
+      retries: 0
+      buffer-memory: ${buffer-memory}
+      request:
+        timeout:
+          ms: $P{ms}
+      acks: 0
+      bootstrap-servers: ${bootstrap-servers}
 
 logging:
   level:
